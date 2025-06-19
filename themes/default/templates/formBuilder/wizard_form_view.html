@@ -1,0 +1,165 @@
+{% extends base_template %}
+{% load static %}
+{% load i18n %}
+{% block breadcrub %} 
+   <li>&nbsp;/&nbsp;<a href='{% url "form_defination" app_id %}' >{% trans 'Page-Definations' %}</a></li>
+   <li>&nbsp;/&nbsp;<a href=''>{{ definition.name }}</a></li>
+{% endblock breadcrub %}
+{% block content %}
+<script src="{% static 'js/jsoneditor.min.js' %}"></script>
+<link href="{% static 'css/jsoneditor.min.css' %}" rel="stylesheet" type="text/css">
+
+
+{% load get_item %}
+{% if messages %}
+<div class="alert alert-warning" role="alert" id="balert">
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+   <span aria-hidden="true">&times;</span>
+   </button>
+</div>
+{% endif %}
+
+<div class="col">
+    <form method="POST" action="{% url 'wizard_form_view' app_id definition.id %}" id="schema_form" class="form form-content" style="margin-top:15px;">
+        {% csrf_token %}
+        <input type="hidden" name="json_data" id="id_json_data"> 
+        <ul class="nav nav-tabs mb-3"  role="tablist">
+            {% for j,i in schema_dict.items %}
+                {% if forloop.first %} 
+                    <li class="active">
+                       <a class="nav-link active" data-toggle="tab" href="#schema_{{i.schema_id}}">{{i.schema.title}}</a>
+                    </li>
+                {% else %}
+                    <li>
+                        <a class="nav-link" data-toggle="tab" href="#schema_{{i.schema_id}}">{{i.schema.title}}</a>
+                    </li>
+                {% endif %}
+                
+            {% endfor %}
+        </ul>
+        <div class="tab-content">
+            {% for j,i in schema_dict.items %}
+                {% if forloop.first %}
+                    <div class="tab-pane active" id="schema_{{i.schema_id}}">
+                        <div class="col-md-10">
+                            <div id="field_{{i.schema_id}}"></div>
+                        </div>
+                        <div class="row">
+                            <button class="btn btn-secondary" id='form_submit_btn' name='form_submit' type="submit">Submit</button>
+                        </div>
+                    </div>
+                {% elif forloop.last %}
+                <div class="tab-pane fade" id="schema_{{i.schema_id}}">
+                    <div class="col-md-10">
+                        <div id="field_{{i.schema_id}}"></div>
+                    </div>
+                    <div class="row">
+                        <button class="btn btn-secondary" id='form_submit_btn' name='form_submit' type="submit">Submit</button>
+                    </div>
+                </div>
+                {% else %}
+                    <div class="tab-pane fade" id="schema_{{i.schema_id}}">
+                        <p>{{i.schema.title}}</p>
+                        <div class="col-md-10">
+                            <div id="field_{{i.schema_id}}"></div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        
+    </form>
+    <br>
+    <br>
+
+</div>
+
+
+<!-- form view handler script -->
+<script>
+    var obj_list = {};
+    var schema_obj;
+    final_data = {}
+    $(document).ready( function() {
+        schema_obj = '{{schema|safe}}'
+        schema_obj = JSON.parse(schema_obj.replace('True','true'));
+        for (var key in schema_obj){ 
+            render_schema(schema_obj[key]);
+        };
+        $('#form_submit_btn').on('click', function() {
+            for (var key in obj_list){
+                data = obj_list[key].getValue()
+                final_data[key] = data
+            }
+            $('#id_json_data').val(JSON.stringify(final_data))
+        })
+    })
+    function render_schema(item) {
+        var properties = item['schema'];
+        var options = {
+            "theme": "bootstrap4",
+            "schema": {
+                "title": properties['title'],
+                "type": "object",
+                "id": "schema",     
+                "options": {
+                    "disable_edit_json": true,
+                    "disable_properties": true,
+                    "disable_collapse":true,
+                    "no_additional_properties":true,
+                    "object_layout":"grid"
+                
+                },
+                "properties": properties['properties'],
+                "required": properties['required']
+            }
+        }
+        var element = document.getElementById(`field_${item.schema_id}`);
+        obj_list[item.schema_name] = new JSONEditor(element, options);
+    }
+    
+    window.setTimeout(function() {
+        $(".alert").fadeTo(500, 0).slideUp(500, function(){
+            $(this).remove(); 
+        });
+    }, 5000); 
+    {% comment %} editor.on('change',() => {
+        const errors = editor.validate();
+        if (errors.length) {
+            $('#form_submit_btn').attr('disabled','disabled');
+        }
+        else {
+            $('#form_submit_btn').removeAttr('disabled');
+        }
+    }); {% endcomment %}
+    function getFormData($form){
+        var unindexed_array = $form.serializeArray();
+        var indexed_array = {};
+    
+        $.map(unindexed_array, function(n, i){
+            indexed_array[n['name']] = n['value'];
+        });
+    
+        return indexed_array;
+    }
+    
+    {% comment %} $('#form_submit_btn').on('click', function() {
+        console.log(editor.getValue())
+        $('#id_json_data').val(JSON.stringify(editor.getValue()))
+        try {
+            {{definition.action_script|safe}}
+        } catch (error) {
+            console.error(error);
+        }     
+    }) {% endcomment %}
+    
+</script>
+{% endblock content %}
+
+
+
+
+

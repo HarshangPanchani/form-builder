@@ -1,0 +1,170 @@
+{% extends base_template %}
+{% load i18n %}
+{% load static %}
+{% block breadcrub %} 
+    <li>&nbsp;/&nbsp;<a href="{% url 'form_defination' app_id %}" >{% trans 'Page Group Definations' %}</a></li>
+    <li>&nbsp;/&nbsp;<a href=''>{% trans 'Edit' %}</a></li>
+{% endblock breadcrub %}
+{% block content %}
+<script src="{% static 'js/jsoneditor.min.js' %}"></script>
+{% if messages %}
+<div class="alert alert-warning" role="alert">
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+   <span aria-hidden="true">&times;</span>
+   </button>
+</div>
+{% endif %}
+<script>
+    window.setTimeout(function() {
+    $(".alert").fadeTo(500, 0).slideUp(500, function(){
+        $(this).remove(); 
+    });
+}, 4000);
+</script>
+
+<div class="container-fluid" style="padding-left: 1rem;padding-right: 1rem;">
+    <h5 class="card-title">{% trans 'Page Group Defination' %}</h5>
+    <hr>
+    <form method="post" action="{% url 'edit_wizard_defination' app_id pk %}" enctype=multipart/form-data >
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.title.label}}</label>   
+                    {{form.title}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.template_type.label}}</label>   
+                    {{form.template_type}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.status.label}}</label>   
+                    {{form.status}}
+                </div>
+            </div>
+            <div class="col-md-3">  
+                <div class="col form-group">
+                    <label>{{form.allowed_user_group.label}}</label>   
+                    {{form.allowed_user_group}}
+                </div>
+            </div>  
+        </div>
+        <br>
+        <div class="row" style="margin-left: 0px;margin-right: 0px;">    
+            <div class="col-md-10">
+                <button class="btn btn-primary" name='wiz_def'  type="submit"> {% trans 'Update' %} </button>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary" onclick="hideform('form_tr')" style="float: right;" type="button" >Add Page</a>      
+            </div>
+        </div>
+    </form>
+   
+
+
+    <br>
+    <!-- page table -->
+    <div class="col">
+        <div class="table-responsive">
+        
+            <table class="table table-bordered table-hover" id='pagess' style="" width="100%" >
+                <thead class="thead-dark">
+                    <tr>
+                        <th width='10%'>Name</th>
+                        <th width='8%'>Page</th>
+                        <th width='12%'>Page Level</th>
+                        <th width='10%'>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <div id="div1" style="display:inline">
+                    <form action="{% url 'edit_wizard_defination' app_id pk %}" id='page_form' method='POST'>
+                        {% csrf_token %}
+                        <input type="hidden" name="page_id" id="edit_page_id" value="">
+                        <tr id="form_tr" style="display: none;">
+                            <td>{{page_form.page_name}}</td>
+                            <td>{{page_form.form_def}}</td>
+                            <td>{{page_form.level}}</td>
+                            <td>
+                                <button class="btn btn-primary" id="bt" name='add_page' type="submit">{% trans 'Add' %}</button>
+                                <button class="btn" onclick="window.location.reload();"><i class="fas fa-sync-alt"></i></button>
+                            </td>
+                        </tr>
+                        </form>
+                    </div>
+                    {% if wiz_form_obj  %}
+                        {% for page in wiz_form_obj reversed %}
+                            <tr>               
+                                <td>{{page.page_name}}</td>
+                                <td>{{page.form_def}}</td>
+                                <td>{{page.level}}</td>
+                                <td>                               
+                                    <button class="btn" method='POST' onclick="load_data('{{page.id}}','{{page.page_name}}','{{page.form_def.id}}','{{page.level}}')">
+                                    <i class="far fa-edit"></i></button>
+                                    <button class="btn" onclick="delete_model_span('{{page.id}}','{{page.page_name}}')" data-toggle="modal" data-target="#deleteModal" ><i class="far fa-trash-alt"></i></button>
+                                </td>
+                            </tr>   
+                        
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="4"><center>{% trans 'No Page available' %}.</center></td></tr> 
+                    {% endif %}
+                </tbody>
+                        
+                
+            </table>
+        </div>
+    </div>
+</div>
+ <!-- delete register Modal -->
+ <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Are you sure you want to delete Page '<span id="model_span"></span>'?</h5>
+            </div>
+            <div class="modal-footer">
+                <form action="" method="POST">
+                    {% csrf_token%}
+                    <input type="hidden" name="page_id" id="delete_page_id" value="">
+                    <button class="btn btn-primary" name='delete_page' type="submit">{% trans 'Delete' %}</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function hideform(tr_id) {
+        var x = document.getElementById(tr_id);
+        if (x.style.display === 'none') {
+            x.style.display = 'table-row';
+            $("#page_form").trigger('reset');
+            $("#bt").text("Add").attr('name','add_page');
+            $('#edit_page_id').val('')
+        } else {
+            x.style.display = 'none';
+        }
+    }
+    function load_data(id,name,form_def,level){
+       
+        document.getElementById('form_tr').style.display = 'table-row'
+        $("#bt").text("Save").attr('name','edit_page');
+        document.getElementById("id_form_def").value = form_def;
+        document.getElementById("id_level").value = level;
+        document.getElementById("edit_page_id").value = id;
+    }
+    function delete_model_span(id,reg) {
+        $("#model_span").text(reg);
+        document.getElementById("delete_page_id").value = id;
+    } 
+</script>
+{% endblock content %}

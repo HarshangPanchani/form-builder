@@ -1,0 +1,285 @@
+{% extends base_template %}
+{% load i18n %}
+{% load static %}
+{% block breadcrub %} 
+    <li>&nbsp;/&nbsp;<a href="{% url 'form_defination' app_id %}" >{% trans 'Page-Definations' %}</a></li>
+    <li>&nbsp;/&nbsp;<a href=''>{% trans 'Edit' %}</a></li>
+{% endblock breadcrub %}
+{% block content %}
+<script src="{% static 'js/jsoneditor.min.js' %}"></script>
+<link href="{% static 'css/jsoneditor.min.css' %}" rel="stylesheet" type="text/css">
+{% if messages %}
+<div class="alert alert-warning" role="alert">
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+   <span aria-hidden="true">&times;</span>
+   </button>
+</div>
+{% endif %}
+<script>
+    window.setTimeout(function() {
+    $(".alert").fadeTo(500, 0).slideUp(500, function(){
+        $(this).remove(); 
+    });
+}, 4000);
+</script>
+
+<div class="container-fluid" style="padding-left: 1rem;padding-right: 1rem;">
+    <h5 class="card-title">{% trans 'Page Defination' %}</h5>
+    <hr>
+    <form method="post" action="{% url 'edit_form_defination' app_id form_id %}" enctype=multipart/form-data >
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.title.label}}</label>   
+                    {{form.title}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.status.label}}</label>   
+                    {{form.status}}
+                </div>
+            </div>
+            {% comment %}<div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.parentId.label}}</label>   
+                    {{form.parentId}}
+                </div>
+            </div>
+            
+             <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.form_type.label}}</label>   
+                    {{form.form_type}}
+                </div>
+            </div> {% endcomment %}
+            {% comment %} <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.intro.label}}</label>   
+                    {{form.intro}}
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.response.label}}</label>   
+                    {{form.response}}
+                </div>
+            </div> {% endcomment %}
+            {% comment %} <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.schema_obj.label}}</label>   
+                    {{form.schema_obj}}
+                </div>
+            </div> {% endcomment %}
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.ttl.label}}</label>   
+                    {{form.ttl}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.allowed_user_group.label}}</label>   
+                    {{form.allowed_user_group}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.before_script.label}}</label>   
+                    {{form.before_script}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.action_script.label}}</label>   
+                    {{form.action_script}}
+                </div>
+            </div>
+            {% comment %} <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.table_name.label}}</label>   
+                    {{form.table_name}}
+                </div>
+            </div> {% endcomment %}
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.schema_obj.label}}</label>   
+                    {{form.schema_obj}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.ds_type.label}}</label>   
+                    {{form.ds_type}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.dashboard_visibility.label}}</label>   
+                    {{form.dashboard_visibility}}
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            {% comment %} <div class="col-md-3 wizard_field">
+                <div class="col form-group">
+                    <label>{{form.wizard_level.label}}</label>   
+                    {{form.wizard_level}}
+                </div>
+            </div>
+            <div class="col-md-3 wizard_field">
+                <div class="col form-group">
+                    <label>{{form.wizard_level_name.label}}</label>   
+                    {{form.wizard_level_name}}
+                </div>
+            </div> {% endcomment %}
+            {% comment %} <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.button_text.label}}</label>   
+                    {{form.button_text}}
+                </div>
+            </div> {% endcomment %}
+        </div>
+        <div class="row">    
+            <div class="col-md-3">
+                <button class="btn btn-primary" style="margin-left: 0.75rem;" id='parent_form_btn'  type="submit"> {% trans 'Update' %} </button>
+                {% comment %} <button class="btn btn-secondary" id="form_preview_btn" name='form_preview' type="button">Preview</button>
+                <button class="btn btn-secondary" style="margin-left: 0.75rem;" id="id_help_btn" name='help' type="button" data-toggle="modal" data-target="#HelpModal">Help</button>  {% endcomment %}
+            </div>
+        </div>
+    </form>
+    <br>
+    <div class='preview_class'>
+        {% comment %} <h5 class="card-title">{% trans 'Page Preview' %}</h5> {% endcomment %}
+        <hr>
+        <div class="row">
+            <div id="field"></div>
+        </div>
+    </div>
+    <div class="col-md-12">
+    <button id="addMappingBtn" style="margin-bottom:5px; float:right;"class="btn btn-primary" data-toggle="modal" data-target="#mappingModal">{% trans 'Add Mapping' %}</button>
+    <table class="table table-bordered table-hover" id="Check" width="100%" cellspacing="0" style="max-width:100%; overflow-y: auto;">
+        <thead class="thead-dark">
+            <tr>
+                <th>{% trans 'Field Name' %}</th>
+                <th>{% trans 'Form Name' %}</th>
+                <th>{% trans 'Form field Name' %}</th>
+                <th>{% trans 'Actions' %}</th>
+            </tr>
+        </thead>
+        <tbody>
+       
+            <tr>
+                <td>Field A</td>
+                <td>Form B</td>
+                <td>Field C</td>
+                <td>
+                    <button class="btn btn-primary btn-sm editMappingBtn">{% trans 'Edit' %}</button>
+                    <button class="btn btn-primary btn-sm deleteMappingBtn">{% trans 'Delete' %}</button>
+                </td>
+            </tr>
+            <!-- More rows will be dynamically added here -->
+        </tbody>
+    </table>
+</div>  
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="mappingModal" tabindex="-1" role="dialog" aria-labelledby="mappingModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mappingModalLabel">{% trans 'Add Mapping' %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="mappingForm">
+                    <div class="form-group">
+                        <label for="addfield">{% trans 'Select Field' %}</label>
+                        <select class="form-control" id="addfield" name="addfield">
+                            {% for field_name, field_data in json_schema_data.items %}
+                                <option value="{{ field_name }}">{{ field_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pageselect">{% trans 'Select Page' %}</label>
+                        <select class="form-control" id="pageselect" name="pageselect">
+                            {% for page_name in page_names %}
+                                <option value="{{ page_name }}">{{ page_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pagefield">{% trans 'Select Page Field' %}</label>
+                        <select class="form-control" id="pagefield" name="pagefield">
+                                <!-- je page select karyu hoy ani fields -->
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveMappingBtn">{% trans 'Save' %}</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    {% comment %} $(document).ready( function() {
+        change_form_type();
+        $('.preview_class').hide()
+        document.getElementById("id_schema_obj").disabled = true;
+    })
+    $("#parent_form_btn").click(function() {
+        $("#id_schema_obj").removeAttr('disabled');
+    });
+    $(document).on('click', '#form_preview_btn', function(){ 
+        $('.preview_class').show()
+        $('#field').empty();
+        var properties = JSON.parse(document.getElementById('id_schema').value);
+       
+        var options = { 
+            "theme": "bootstrap4",
+            "schema": {
+                "title": properties['title'],
+                "type": "object",
+                "id": "schema",     
+                "options": {
+                    "disable_edit_json": true,
+                    "disable_properties": true,
+                    "disable_collapse":true,
+                    "no_additional_properties":true,
+                    "object_layout":"grid",
+                    "ordered": false,
+                },
+                "properties": properties['properties'],
+                "required": properties['required']
+            }
+        }
+        var element = document.getElementById('field');
+        var editor = new JSONEditor(element, options);
+    }); {% endcomment %}
+    
+    
+    window.setTimeout(function() {
+        $(".alert").fadeTo(500, 0).slideUp(500, function(){
+            $(this).remove(); 
+        });
+    }, 5000);
+
+    
+</script>
+
+
+{% endblock content %}

@@ -1,0 +1,484 @@
+{% extends base_template %}
+{% load i18n %}
+{% load static %}
+{% block breadcrub %} 
+    <li>&nbsp;/&nbsp;<a href="{% url 'form_defination' app_id %}" >{% trans 'Page-Definations' %}</a></li>
+    <li>&nbsp;/&nbsp;<a href=''>{% trans 'Add' %}</a></li>
+{% endblock breadcrub %}
+{% block content %}
+<script src="{% static 'js/jsoneditor.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/sb-admin-2.css' %}" type="text/css"/>
+{% if messages %}
+<div class="alert alert-warning" role="alert">
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+   <span aria-hidden="true">&times;</span>
+   </button>
+</div>
+{% endif %}
+{% comment %} <script>
+    window.setTimeout(function() {
+    $(".alert").fadeTo(500, 0).slideUp(500, function(){
+        $(this).remove(); 
+    });
+}, 4000);
+</script> {% endcomment %}
+
+<div class="container-fluid" style="padding-left: 1rem;padding-right: 1rem;">
+    <h5 class="card-title">{% trans 'Page Defination' %}</h5>
+    <hr>
+    <form method="post" action="{% url 'add_form_defination' app_id %}" enctype=multipart/form-data >
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.title.label}}</label>   
+                    {{form.title}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.status.label}}</label>   
+                    {{form.status}}
+                </div>
+            </div>
+            {% comment %}<div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.parentId.label}}</label>   
+                    {{form.parentId}}
+                </div>
+            </div>
+            
+             <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.form_type.label}}</label>   
+                    {{form.form_type}}
+                </div>
+            </div> {% endcomment %}
+            {% comment %} <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.intro.label}}</label>   
+                    {{form.intro}}
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.response.label}}</label>   
+                    {{form.response}}
+                </div>
+            </div> {% endcomment %}
+            {% comment %} <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.schema_obj.label}}</label>   
+                    {{form.schema_obj}}
+                </div>
+            </div> {% endcomment %}
+            <input type="hidden" id="id_schema" name="schema">
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.ttl.label}}</label>   
+                    {{form.ttl}}
+                </div>
+            </div>
+           
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.allowed_user_group.label}}</label>   
+                    {{form.allowed_user_group}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.before_script.label}}</label>   
+                    {{form.before_script}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.action_script.label}}</label>   
+                    {{form.action_script}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>Select schema or table:</label>   
+                    <select name="schema_or_table" class="form-control" id="id_schema_or_table" onchange="handleOptionChange_schema_or_table()">
+                        <option value="Schema" selected="">Schema</option>
+                      
+                        <option value="Table">Table</option>
+                      
+                      </select>
+                </div>
+            </div>
+            <div class="col-md-3" id="id_form_schema_obj_div" >
+                <div class="col form-group">
+                    <label>{{form.schema_obj.label}}</label>   
+                    {{form.schema_obj}}
+                </div>
+            </div>
+            
+            <div class="col-md-3" id="id_form_table_name_div" style="display : none">
+                <div class="col form-group">
+                    <label>{{form.table_name.label}}</label>   
+                    {{form.table_name}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.ds_type.label}}</label>   
+                    {{form.ds_type}}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="col form-group">
+                    <label>{{form.dashboard_visibility.label}}</label>   
+                    {{form.dashboard_visibility}}
+                </div>
+            </div>
+        </div>
+      
+        <div class="row">    
+            <div class="col-md-3">
+                <button class="btn btn-primary" style="margin-left: 0.75rem;"  type="submit"> {% trans 'Add' %} </button>
+                {% comment %} <button class="btn btn-secondary" style="margin-left: 0.75rem;" id="form_preview_btn" name='form_preview' type="button">Preview</button>
+                <a class='btn btn-secondary' href="{% url 'schema_editor' app_id %}" style="margin-left: 0.75rem;" name="Editor" id="schema_editor"> Schema Editor</a>{% endcomment %}
+                <button class="btn btn-secondary" style="margin-left: 0.75rem;" id="id_help_btn" name='help' type="button" data-toggle="modal" data-target="#HelpModal">Help</button>  
+            </div>
+        </div>
+    </form>
+    <br>
+    <div class='preview_class'>
+        <h5 class="card-title">{% trans 'Page Preview' %}</h5>
+        <hr>
+        <div id="field"></div>
+    </div>
+</div>
+<div class="modal fade bd-example-modal-lg" id="HelpModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">{% trans 'Json Schema Information' %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                
+                <h5 class="modal-title" id="exampleModalLabel">{% trans 'Suppoerted Data Type' %}</h5>
+                <br>
+                <p class='row col'>JSON Editor supports many different formats for schemas of type string. 
+                    They will work with schemas of type integer and number as well, but some formats may produce weird results. 
+                    If the enum property is specified, format will be ignored.</p>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : text</label> 
+                            <input type="text" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : number</label> 
+                            <input type="number" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : checkbox</label>  
+                            <input type="checkbox" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : textarea</label>  
+                            <textarea class="form-control"></textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : color</label>  
+                            <input type="color" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : date</label>  
+                    <input type="date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : datetime</label>  
+                            <input type="datetime-local" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : email</label> 
+                            <input type="email" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : month</label> 
+                            <input type="month" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : password</label> 
+                            <input type="password" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : radio</label> 
+                            <input type="radio" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : range</label> 
+                            <input type="range" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : time</label> 
+                            <input type="time" class="form-control">
+                        </div>
+                    </div>
+                  
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : url</label> 
+                            <input type="url" class="form-control">
+                        </div>
+                    </div>
+                  
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : week</label> 
+                            <input type="week" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <h5 class="modal-title" id="exampleModalLabel">{% trans 'Property Grid View' %}</h5>
+                <br>
+                <p class='row col'>Example:
+                "a": {
+                    "title": "a",
+                    "type": "string",
+                    "options": {
+                      "grid_columns": 4
+                    }
+                },</p>
+                <h5 class="modal-title" id="exampleModalLabel">{% trans 'Property Ordering' %}</h5>
+                <br>    
+                <p class='row col'>Example:
+                "a": {
+                    "title": "a",
+                    "type": "string",
+                    "propertyOrder": 10
+                },</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div> 
+<script>
+    $(document).ready(function() {
+       const table_name = document.getElementById('id_table_name');
+       table_name.insertAdjacentHTML('afterbegin','<option value="" selected disabled>Select an option</option>');
+    });
+    function handleOptionChange_schema_or_table()
+    {
+        const selectElement = document.getElementById('id_schema_or_table');
+        const selectedValue = selectElement.value;
+        const div_schema = document.getElementById('id_form_schema_obj_div');
+        const div_table = document.getElementById('id_form_table_name_div');
+        switch (selectedValue) {
+            case "Schema":
+                $('#id_table_name').attr('required',false);
+                div_table.style.display = "none";
+                div_schema.style.display= "block";
+                $('#id_schema_obj').attr('required',true);
+              
+              break;
+            case "Table":
+                $('#id_table_name').attr('required',true);
+                div_table.style.display = "block";
+                $('#id_schema_obj').attr('required',false);
+                div_schema.style.display= "none";
+              
+              break;
+            default:
+                $('#id_table_name').attr('required',false);
+                div_table.style.display = "none";
+                div_schema.style.display= "block";
+                $('#id_schema_obj').attr('required',true);
+        }
+    }
+</script>
+{% comment %} <script>
+    $(document).ready( function() {
+        
+        $('.preview_class').hide()
+    }) {% endcomment %}
+    {% comment %} function change_form_type() {
+        var form_type = $('#id_form_type').val();
+        if (form_type == 'wizard') {
+            $('.wizard_field').show();
+            $('#id_wizard_level,#id_wizard_level_name').attr('required',true);
+        } 
+        else {
+            $('.wizard_field').hide();
+            $('#id_wizard_level,#id_wizard_level_name').attr('required',false);
+        }
+    } {% endcomment %}
+    {% comment %} function check() 
+    {
+        var json_file=document.getElementById('schema_file')
+            .addEventListener('change', function() 
+            {
+              
+                var fr=new FileReader();
+                fr.onload=function(){
+                    document.getElementById('id_params')
+                            .textContent=fr.result;
+            }
+            
+            fr.readAsText(this.files[0]);
+        })
+    } {% endcomment %}
+    {% comment %} function change_cron() {
+        var cron_type = $('#id_cr_pattern').val();
+        
+        if (cron_type == 'custom') {
+            $('.crn').show();
+        } else {
+            $('#id_cron_pattern').val(cron_type);
+            $('.crn').hide();
+        }
+    }
+    function change_sync() {
+        var sync_type = $('#id_data_sync').val();
+        if (sync_type == 'true') {
+            $('.data_sync_type_field,.att_sync_f').show();
+            $('#id_data_sync_type').attr('required',true);
+        } else {
+            $('.data_sync_type_field,.att_sync_f').hide();
+            $('#id_data_sync_type').attr('required',false);
+            $("#id_data_sync_type").val("");
+            $('#id_attribute_sync').val("False")
+        }
+        change_sync_type();
+        change_attribute_type();
+    }
+
+    function change_sync_type() {
+        var dst = $('#id_data_sync_type').val();
+        $('.token_field').show();
+       
+        if (dst == 'mqtt') {
+   
+            $('.mqtt_pub_topic_field').show();
+            $('#id_mqtt_topic').attr('required',true);
+
+        } else if (dst == 'http') {
+            $('.mqtt_pub_topic_field').hide();
+            $('#id_mqtt_topic').attr('required',false);
+            $('#id_mqtt_topic').val('');
+        } else {
+            
+            $('.mqtt_pub_topic_field, .token_field').hide();
+            $('#id_mqtt_topic, #id_access_token').attr('required',false);
+            
+        }
+        
+    }
+    function change_attribute_type(){
+        var att_sync = $('#id_attribute_sync').val();
+        if (att_sync=='True') {
+            $('.attribute_sync_field').show();
+            $('#id_attribute_sync_interval').attr('required',true);
+        } else {
+            $('.attribute_sync_field').hide();
+            $('#id_attribute_sync_interval').attr('required',false);
+        }
+
+    } 
+
+</script>{% endcomment %}
+{% comment %} <script>
+    $(document).on('click', '#form_preview_btn', function(){ 
+
+        $('.preview_class').show()
+        $('#field').empty();
+        var properties = JSON.parse(document.getElementById('id_schema').value);
+
+        var options = { 
+            "theme": "bootstrap4",
+            "schema": {
+                "title": properties['title'],
+                "type": "object",
+                "id": "schema",     
+                "options": {
+                    "disable_edit_json": true,
+                    "disable_properties": true,
+                    "disable_collapse":true,
+                    "no_additional_properties":true,
+                    "object_layout":"grid",
+                    "ordered": false,
+                },
+                "properties": properties['properties'],
+                "required": properties['required']
+            }
+        }
+        var element = document.getElementById('field');
+        var editor = new JSONEditor(element, options);
+    });
+    
+    
+    window.setTimeout(function() {
+        $(".alert").fadeTo(500, 0).slideUp(500, function(){
+            $(this).remove(); 
+        });
+    }, 5000);
+
+    
+</script> {% endcomment %}
+{% comment %} <script>
+$(document).ready(function() {
+    $('#addMappingBtn').click(function() {
+        $('#mappingModal').modal('show');
+    });
+
+    $('#saveMappingBtn').click(function() {
+        var fieldA = $('#fieldA').val();
+        var fieldB = $('#fieldB').val();
+        var fieldC = $('#fieldC').val();
+
+        var newRow = '<tr>' +
+            '<td>' + fieldA + '</td>' +
+            '<td>' + fieldB + '</td>' +
+            '<td>' + fieldC + '</td>' +
+            '</tr>';
+
+        $('#Check tbody').append(newRow);
+        $('#mappingModal').modal('hide');
+
+        // Clear input fields after adding row
+        $('#fieldA').val('');
+        $('#fieldB').val('');
+        $('#fieldC').val('');
+    });
+});
+</script> {% endcomment %}
+<script src="{% static 'js/formBuilder/add_defination.js'%}"></script>
+{% endblock content %}

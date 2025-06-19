@@ -1,0 +1,601 @@
+{% extends base_template %}
+{% load i18n %}
+{% load static %}
+{% block breadcrub %} 
+    <li>&nbsp;/&nbsp;<a href="{% url 'form_defination' app_id %}" >{% trans 'Schema' %}</a></li>
+    <li>&nbsp;/&nbsp;<a href=''>{% trans 'Add' %}</a></li>
+{% endblock breadcrub %}
+{% block content %}
+<script src="{% static 'js/jsoneditor.min.js' %}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.4.2/src-min/ace.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.4.2/src-min/mode-javascript.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.4.2/src-min/mode-json.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.4.2/src-min/mode-css.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.4.2/src-min/ext-beautify.js"></script>
+    <!-- LZString compression library - Used to create direct link to the page - https://github.com/pieroxy/lz-string -->
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+
+<script>
+    var staticBaseUrl = "{% static '' %}";
+</script>
+  <!-- Split.js - https://github.com/nathancahill/split/ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.5.10/split.min.js"></script>
+
+    <link rel="stylesheet" href="{% static 'css/forms.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'css/json-editor-demo.css' %}" type="text/css"/> 
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'css/splitpanel.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'css/jsoneditor_demo.min.css' %}" type="text/html"/> 
+{% if messages %}
+<div class="alert alert-warning" role="alert">
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+   <span aria-hidden="true">&times;</span>
+   </button>
+</div>
+{% endif %}
+{% comment %} <script>
+    window.setTimeout(function() {
+    $(".alert").fadeTo(500, 0).slideUp(500, function(){
+        $(this).remove(); 
+    });
+}, 4000);
+    function openFileExplorer() {
+        document.getElementById('fileInput').click();
+    }
+</script> {% endcomment %}
+
+<div class="container-fluid" style="padding-left: 1rem; padding-right: 1rem;">
+    <h5 class="card-title">{% trans 'Schema Definition' %}</h5>
+    <div style="display: flex; flex-wrap: wrap; gap: 1px; margin-top: -5px; padding-left: 24.9rem">
+        <nav class="links">
+            <button class="btn btn-primary" type="button" id="show-config" title="Config option"><i class="icon-menu"></i>Options</button>
+            <button class="btn btn-primary" type="button" id="execute-code" title="Generate Form"><i class="icon-cog"></i>Form</button>
+            <button class="btn btn-primary" type="button" id="direct_link" title="Create Direct link to current setup"><i class="icon-link"></i>Direct link</button>
+            <button class="btn btn-primary" type="button" id="direct_link_reset" title="Reset form and query parameters"><i class="icon-unlink"></i>Reset form</button>
+            <button class="btn btn-primary" type="button" id="download_example" title="Download current setup"><i class="icon-download"></i>Download</button>
+            <button class="btn btn-primary" type="button" id="upload_example" title="Upload previously saved setup"><i class="icon-upload"></i>Upload</button>
+            <input type="file" accept=".json" id="fileInput"/>
+            <button hidden type="button" id="files-used" title="List of external JavaScript and CSS files used in the current example"><i class="icon-info-circled"></i></button>
+            <button class="btn btn-primary" type="button" id="show-load-examples" title="Load Example"><i class="icon-upload"></i>Load Example</button>
+        </nav>
+    </div>
+    <hr style="margin-top: 0.75rem;">
+    <div class="container">
+        <div class="row">
+        <div id="slideleft-panel" class="panel panel-left">
+      <div class="panel-container">
+        <div class="panel-contents" id="json-editor-config">
+          <h2>JSON-Editor Options</h2>
+          <div>
+            <label for="theme">CSS Framework</label>
+            <div class="select">
+              <select id="theme">
+                <option value="barebones">Barebones</option>
+                <option value="html">HTML</option>
+                <option value="jqueryui">jQuery UI</option>
+                <option value="bootstrap2">Bootstrap 2</option>
+                <option value="bootstrap3" selected>Bootstrap 3</option>
+                <option value="bootstrap4">Bootstrap 4</option>
+                <option value="foundation3">Foundation 3</option>
+                <option value="foundation4">Foundation 4</option>
+                <option value="foundation5">Foundation 5</option>
+                <option value="foundation6">Foundation 6</option>
+                <option value="materialize">Materialize</option>
+                <option value="tailwind">Tailwind</option>
+                <option value="spectre">Spectre</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label for="iconlib">Icon Library</label>
+            <div class="select">
+              <select id="iconlib">
+                <option value="">None</option>
+                <option value="jqueryui">jQuery UI</option>
+                <option value="bootstrap2">Bootstrap 2 Glyphicons</option>
+                <option value="bootstrap3" selected>Bootstrap 3 Glyphicons</option>
+                <option value="foundation2">Foundicons 2</option>
+                <option value="foundation3">Foundicons 3</option>
+                <option value="fontawesome3">FontAwesome 3</option>
+                <option value="fontawesome4">FontAwesome 4</option>
+                <option value="fontawesome5">FontAwesome 5</option>
+                <option value="materialicons">Material Icons</option>
+                <option value="spectre">Spectre</option>    
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label for="object_layout">Object Layout</label>
+            <div class="select">
+              <select id="object_layout">
+                <option value="normal">normal</option>
+                <option value="grid">grid</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label for="template">Template Engine</label>
+            <div class="select">
+              <select id="template">
+                <option value="default">Default</option>
+                <option value="ejs">Ejs</option>
+                <option value="handlebars">Handlebars</option>
+                <option value="hogan">Hogan</option>
+                <option value="lodash">Lodash</option>
+                <option value="markup">Markup</option>
+                <option value="mustache">Mustache</option>
+                <option value="swig">Swig</option>
+                <option value="underscore">Underscore</option>
+              </select>
+            </div>
+          </div>
+
+           <div>
+            <label for="show_errors">Show Errors</label>
+            <div class="select">
+              <select id="show_errors">
+                <option value="interaction">On Interaction</option>
+                <option value="change">On Field Change</option>
+                <option value="always">Always</option>
+                <option value="never">Never</option>
+              </select>
+            </div>
+          </div>
+
+          <details open>
+            <summary>Boolean options</summary>
+            <div id="boolean_options">
+              <label title="required_by_default">
+                <input type="checkbox" id="required_by_default" value="required_by_default">
+                <span>Object properties required by default</span>
+              </label>
+              <label title="no_additional_properties">
+                <input type="checkbox" id="no_additional_properties" value="no_additional_properties">
+                <span>No additional object properties</span>
+              </label>
+              <label title="display_required_only">
+                <input type="checkbox" id="display_required_only" value="display_required_only">
+                <span>Display only required object properties</span>
+              </label>
+              <label title="remove_empty_properties">
+                <input type="checkbox" id="remove_empty_properties" value="remove_empty_properties">
+                <span>Remove empty properties.</span>
+              </label>
+              <label title="keep_oneof_values">
+                <input type="checkbox" id="keep_oneof_values" value="keep_oneof_values" checked>
+                <span>Makes oneOf copy properties over when switching</span>
+              </label>
+              <label title="ajax">
+                <input type="checkbox" id="ajax" value="ajax">
+                <span>Allow loading schemas via AJAX</span>
+              </label>
+              <label title="ajaxCredentials">
+                <input type="checkbox" id="ajaxCredentials" value="ajaxCredentials">
+                <span>Make AJAX call with credentials.</span>
+              </label>
+              <label title="show_opt_in">
+                <input type="checkbox" id="show_opt_in" value="show_opt_in">
+                <span>Show include checkbox for NON required properties.</span>
+              </label>
+              <label title="disable_edit_json">
+                <input type="checkbox" id="disable_edit_json" value="disable_edit_json">
+                <span>Disable "Edit JSON" buttons</span>
+              </label>
+              <label title="disable_collapse">
+                <input type="checkbox" id="disable_collapse" value="disable_collapse">
+                <span>Disable collapse buttons</span>
+              </label>
+              <label title="disable_properties">
+                <input type="checkbox" id="disable_properties" value="disable_properties">
+                <span>Disable properties buttons</span>
+              </label>
+              <label title="disable_array_add">
+                <input type="checkbox" id="disable_array_add" value="disable_array_add">
+                <span>Disable array add buttons</span>
+              </label>
+              <label title="disable_array_reorder">
+                <input type="checkbox" id="disable_array_reorder" value="disable_array_reorder">
+                <span>Disable array move buttons</span>
+              </label>
+              <label title="disable_array_delete">
+                <input type="checkbox" id="disable_array_delete" value="disable_array_delete">
+                <span>Disable array delete buttons</span>
+              </label>
+              <label title="enable_array_copy">
+                <input type="checkbox" id="enable_array_copy" value="enable_array_copy">
+                <span>Add copy buttons to arrays</span>
+              </label>
+              <label title="array_controls_top">
+                <input type="checkbox" id="array_controls_top" value="array_controls_top">
+                <span>Array controls will be displayed at top of list</span>
+              </label>
+              <label title="disable_array_delete_all_rows">
+                <input type="checkbox" id="disable_array_delete_all_rows" value="disable_array_delete_all_rows">
+                <span>Disable array delete all rows buttons</span>
+              </label>
+              <label title="disable_array_delete_last_row" >
+                <input type="checkbox" id="disable_array_delete_last_row"value="disable_array_delete_last_row">
+                <span>Disable array delete last row buttons</span>
+              </label>
+              <label title="prompt_before_delete" >
+                <input type="checkbox" id="prompt_before_delete"value="prompt_before_delete" checked>
+                <span>Display dialog box before node deletion.</span>
+              </label>
+            </div>
+          </details>
+
+          <details open>
+            <summary>Include External Libraries</summary>
+            <div id="ext_lib">
+              <label>
+                <input type="checkbox" id="lib_aceeditor" value="lib_aceeditor">
+                <span>Ace Editor</span>
+              </label>
+              <label>
+                <input type="checkbox" id="lib_autocomplete" value="lib_autocomplete">
+                <span>Autocomplete Editor</span>
+              </label>
+              <label>
+                <input type="checkbox" id="lib_sceditor" value="lib_sceditor">
+                <span>SCEditor</span>
+              </label>
+              <label>
+                <input type="checkbox" id="lib_simplemde" value="lib_simplemde">
+                <span>SimpleMDE</span>
+              </label>
+              <label>
+                <input type="checkbox" id="lib_select2" value="lib_select2">
+                <span>Select2</span>
+              </label>
+              <label>
+                <input type="checkbox" id="lib_selectize" value="lib_selectize">
+                <span>Selectize</span>
+              </label>
+              <label>
+                <input type="checkbox" id="lib_choices" value="lib_choices">
+                <span>Choices.js</span>
+              </label>
+              <label>
+                <input type="checkbox" id="lib_flatpickr" value="lib_flatpickr">
+                <span>Flatpickr</span>
+              </label>
+              <label>
+                <input type="checkbox" id="lib_signaturepad" value="lib_signaturepad">
+                <span>Signature Pad</span>
+              </label>
+              <label>
+                <input type="checkbox" id="lib_mathjs" value="lib_mathjs">
+                <span>Math.js</span>
+              </label>
+              <label>
+                <input type="checkbox" id="lib_cleavejs" value="lib_cleavejs">
+                <span>Cleave.js</span>
+              </label>
+              <label>
+                <input type="checkbox" id="lib_jodit" value="lib_jodit">
+                <span>Jodit</span>
+              </label>
+              <label>
+                <input type="checkbox" id="lib_jquery" value="lib_jquery">
+                <span>jQuery</span>
+              </label>
+              <label>
+                <input type="checkbox" id="lib_dompurify" value="lib_dompurify">
+                <span>DOMPurify</span>
+              </label>
+            </div>
+          </details>
+        </div>
+        <div class="panel-close-button" title="Close panel">&times;</div>
+      </div>
+    </div>
+        <div id="slideright-panel" class="panel panel-right">
+      <div class="panel-container">
+        <div class="panel-contents">
+          <div id="external-schema"></div>
+        </div>
+        <div class="panel-close-button" title="Close panel">&times;</div>
+      </div>
+    </div>
+            <div class="col-3" xstyle="width: 30vw;">
+                <form method="post" action="{% url 'add_schema' app_id %}" enctype="multipart/form-data"  >
+                    {% csrf_token %}
+                    <div class="col-md-12">
+                        <div class="col form-group">
+                            <label>{{form.schema_name.label}}</label>   
+                            {{form.schema_name}}
+                        </div>
+                    </div>
+                    <input type="hidden" id="id_schema" name="schema">
+                    <input type="hidden" id="id_style" name="formScript">
+                    {% comment %}<div class="col-md-12">
+                        <div class="col form-group">
+                            <label>{{form.db_ref.label}}</label>   
+                            {{form.db_ref}}
+                        </div>
+                    </div> {% endcomment %}
+                    <button class="btn btn-primary" style="margin-left: 1.5rem;" onclick="saveSchema()" type="submit">{% trans 'Add' %}</button>
+
+                  
+                    <div id="field"></div>
+                </form>
+            </div>
+            <div class="col-9" style="width: 30vw; flex: 0 0 90%; max-width:1200px; margin-left:20rem; margin-top:-6rem">
+                {% include "formBuilder/demo.html" %}
+            </div>
+        </div>
+    </div>
+</div>
+  {% comment %} <div id="formDataContainer">hiiiii</div> {% endcomment %}
+ <!-- Modal -->
+ <div class="modal fade bd-example-modal-lg" id="HelpModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">{% trans 'Json Schema Information' %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                
+                <h5 class="modal-title" id="exampleModalLabel">{% trans 'Suppoerted Data Type' %}</h5>
+                <br>
+                <p class='row col'>JSON Editor supports many different formats for schemas of type string. 
+                    They will work with schemas of type integer and number as well, but some formats may produce weird results. 
+                    If the enum property is specified, format will be ignored.</p>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : text</label> 
+                            <input type="text" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : number</label> 
+                            <input type="number" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : checkbox</label>  
+                            <input type="checkbox" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : textarea</label>  
+                            <textarea class="form-control"></textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : color</label>  
+                            <input type="color" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : date</label>  
+                    <input type="date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : datetime</label>  
+                            <input type="datetime-local" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : email</label> 
+                            <input type="email" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : month</label> 
+                            <input type="month" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : password</label> 
+                            <input type="password" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : radio</label> 
+                            <input type="radio" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : range</label> 
+                            <input type="range" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : time</label> 
+                            <input type="time" class="form-control">
+                        </div>
+                    </div>
+                  
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : url</label> 
+                            <input type="url" class="form-control">
+                        </div>
+                    </div>
+                  
+                    <div class="col-md-4">
+                        <div class="col form-group">
+                            <label>format : week</label> 
+                            <input type="week" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <h5 class="modal-title" id="exampleModalLabel">{% trans 'Property Grid View' %}</h5>
+                <br>
+                <p class='row col'>Example:
+                "a": {
+                    "title": "a",
+                    "type": "string",
+                    "options": {
+                      "grid_columns": 4
+                    }
+                },</p>
+                <h5 class="modal-title" id="exampleModalLabel">{% trans 'Property Ordering' %}</h5>
+                <br>    
+                <p class='row col'>Example:
+                "a": {
+                    "title": "a",
+                    "type": "string",
+                    "propertyOrder": 10
+                },</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div> 
+{% comment %} <script>
+    $(document).ready( function() {
+        change_form_type();
+        $('.preview_class').hide()
+    })
+    function change_form_type() {
+        var form_type = $('#id_form_type').val();
+        if (form_type == 'wizard') {
+            $('.wizard_field').show();
+            $('#id_wizard_level,#id_wizard_level_name').attr('required',true);
+        } 
+        else {
+            $('.wizard_field').hide();
+            $('#id_wizard_level,#id_wizard_level_name').attr('required',false);
+        }
+    }
+    function check() 
+    {
+        var json_file=document.getElementById('schema_file')
+            .addEventListener('change', function() 
+            {
+              
+                var fr=new FileReader();
+                fr.onload=function(){
+                    document.getElementById('id_params')
+                            .textContent=fr.result;
+            }
+            
+            fr.readAsText(this.files[0]);
+        })
+    } {% endcomment %}
+    {% comment %} function change_cron() {
+        var cron_type = $('#id_cr_pattern').val();
+        
+        if (cron_type == 'custom') {
+            $('.crn').show();
+        } else {
+            $('#id_cron_pattern').val(cron_type);
+            $('.crn').hide();
+        }
+    }
+    function change_sync() {
+        var sync_type = $('#id_data_sync').val();
+        if (sync_type == 'true') {
+            $('.data_sync_type_field,.att_sync_f').show();
+            $('#id_data_sync_type').attr('required',true);
+        } else {
+            $('.data_sync_type_field,.att_sync_f').hide();
+            $('#id_data_sync_type').attr('required',false);
+            $("#id_data_sync_type").val("");
+            $('#id_attribute_sync').val("False")
+        }
+        change_sync_type();
+        change_attribute_type();
+    }
+
+    function change_sync_type() {
+        var dst = $('#id_data_sync_type').val();
+        $('.token_field').show();
+       
+        if (dst == 'mqtt') {
+   
+            $('.mqtt_pub_topic_field').show();
+            $('#id_mqtt_topic').attr('required',true);
+
+        } else if (dst == 'http') {
+            $('.mqtt_pub_topic_field').hide();
+            $('#id_mqtt_topic').attr('required',false);
+            $('#id_mqtt_topic').val('');
+        } else {
+            
+            $('.mqtt_pub_topic_field, .token_field').hide();
+            $('#id_mqtt_topic, #id_access_token').attr('required',false);
+            
+        }
+        
+    }
+    function change_attribute_type(){
+        var att_sync = $('#id_attribute_sync').val();
+        if (att_sync=='True') {
+            $('.attribute_sync_field').show();
+            $('#id_attribute_sync_interval').attr('required',true);
+        } else {
+            $('.attribute_sync_field').hide();
+            $('#id_attribute_sync_interval').attr('required',false);
+        }
+
+    } 
+
+</script>{% endcomment %}
+{% comment %} <script>
+    $(document).on('click', '#form_preview_btn', function(){ 
+
+        $('.preview_class').show()
+        $('#field').empty();
+        var properties = JSON.parse(document.getElementById('id_schema').value);
+
+        var options = { 
+            "theme": "bootstrap4",
+            "schema": {
+                "title": properties['title'],
+                "type": "object",
+                "id": "schema",     
+                "options": {
+                    "disable_edit_json": true,
+                    "disable_properties": true,
+                    "disable_collapse":true,
+                    "no_additional_properties":true,
+                    "object_layout":"grid",
+                    "ordered": false,
+                },
+                "properties": properties['properties'],
+                "required": properties['required']
+            }
+        }
+        var element = document.getElementById('field');
+        var editor = new JSONEditor(element, options);
+    });
+    
+    
+    window.setTimeout(function() {
+        $(".alert").fadeTo(500, 0).slideUp(500, function(){
+            $(this).remove(); 
+        });
+    }, 5000);
+
+    
+</script> {% endcomment %}
+<script src="{% static 'js/formBUilder/add_schema.js'%}"></script>
+{% endblock content %}

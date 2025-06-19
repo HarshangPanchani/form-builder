@@ -1,0 +1,142 @@
+{% extends base_template %}
+{% load static %}
+{% load i18n %}
+{% block breadcrub %} 
+   <li>&nbsp;/&nbsp;<a href='{% url "form_defination" app_id %}' >{% trans 'Page-Definations' %}</a></li>
+   <li>&nbsp;/&nbsp;<a href='{% url "form_view" app_id definition.id %}'>{{ definition.name }}</a></li>
+   <li>&nbsp;/&nbsp;<a href=''>Entries</a></li>
+{% endblock breadcrub %}
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'css/datatables.css' %}" type="text/css"/>
+<script type="text/javascript" src="{% static 'js/datatables.min.js' %}"></script>
+
+{% comment %} <script src="{% static 'js/jsoneditor.min.js' %}"></script>
+<link href="{% static 'css/jsoneditor.min.css' %}" rel="stylesheet" type="text/css"> {% endcomment %}
+
+
+{% load get_item %}
+{% if messages %}
+<div class="alert alert-warning" role="alert" id="balert">
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+   <span aria-hidden="true">&times;</span>
+   </button>
+</div>
+{% endif %}
+
+<style>
+    .dataTables_paginate {
+        float: left !important;
+    }
+    .container-fluid {
+        width:100%
+    }
+</style>
+
+
+<div class="col">
+    <div class="col-md-6" style='padding-left: 0rem;'>
+        <h5 class="card-title">{% trans 'Page Entries' %}</h5> 
+    </div>
+    <div class="row">
+        <div class=" table">
+            <table class="table table-bordered table-hover" style="border-collapse: collapse;" id="entry_table" width="100%" cellspacing="0">
+                {% if parent_table %}
+                    <thead  class="thead-dark">
+                        <tr>
+                            {% for item in parent_table.0 %}
+                               
+                                <th >{{item}}</th>
+                               
+                            {% endfor %}
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                {% endif %}
+                <tbody>
+                    {% if parent_table  %} <!-- and perms.deviceAdapter.view_modbus_connectionproxy-->
+                        {% for item in parent_table %}
+                        <tr>
+                            
+                            {% for key, value in item.items %}
+                                
+                                <td>{{value}}</td>
+                                
+                            {% endfor %}
+                            <td>
+                                <a class="btn" href="{% url 'form_entry_edit' app_id definition.id item.id %}" id='form_data_edit' type='button'><i class="far fa-edit"></i></a>|
+                                <a class="btn" href="{% url 'form_entry_delete' app_id definition.id %}?id={{item.id}}" id='form_data_delete' type='button'><i class="far fa-trash-alt"></i></a>
+                                {% comment %} <button class="btn" onclick="delete_model_span('{{reg.id}}','{{reg}}')" data-toggle="modal" data-target="#deleteModal" ><i class="far fa-trash-alt"></i></button> {% endcomment %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                    <tr><td colspan="5"><center>{% trans 'No Entries available' %}.</center></td></tr> 
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<!-- form view handler script -->
+<script>
+    {% comment %} var properties = '{{schema|safe}}';
+    properties=JSON.parse(properties.replace('True','true'));
+    var options = {
+        "theme": "bootstrap4",
+        "schema": {
+            "title": properties['title'],
+            "type": "object",
+            "id": "schema",     
+            "options": {
+                "disable_edit_json": true,
+                "disable_properties": true,
+                "disable_collapse":true,
+                "no_additional_properties":true,
+                "object_layout":"grid",
+                "ordered": false,
+            },
+            "properties": properties['properties'],
+            "required": properties['required']
+        }
+    }
+    var element = document.getElementById('field');
+    var editor = new JSONEditor(element, options);
+    
+    window.setTimeout(function() {
+        $(".alert").fadeTo(500, 0).slideUp(500, function(){
+            $(this).remove(); 
+        });
+    }, 5000);
+
+    $('#form_submit_btn').on('click', function() {
+        $('#id_json_data').val(JSON.stringify(editor.getValue()))
+    }) {% endcomment %}
+
+
+    $(document).ready(function(){
+        $.noConflict();
+        var table = $('#entry_table').DataTable({
+           "lengthChange": false, 
+           "bPaginate": true,
+           "bLengthChange": false,
+           "bFilter": true,
+            scrollX: true,
+           "ordering": true, 
+           "bInfo": false,
+           "AutoWidth": true,
+        });
+        $('.dataTables_paginate').addClass('btn');
+     }); 
+</script>
+{% endblock content %}
+
+
+
+
+

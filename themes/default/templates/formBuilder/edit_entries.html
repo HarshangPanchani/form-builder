@@ -1,0 +1,240 @@
+{% extends base_template %}
+{% load static %}
+{% load i18n %}
+{% block breadcrub %} 
+   <li>&nbsp;/&nbsp;<a href='{% url "form_defination" app_id %}' >{% trans 'Page-Definations' %}</a></li>
+   <li>&nbsp;/&nbsp;<a href='{% url "form_entry" app_id definition.id %}'>{{ definition.name }}</a></li>
+   <li>&nbsp;/&nbsp;<a href=''>Edit</a></li>
+{% endblock breadcrub %}
+{% block content %}
+<script src="{% static 'js/jsoneditor.min.js' %}"></script>
+<link href="{% static 'css/jsoneditor.min.css' %}" rel="stylesheet" type="text/css">
+
+{% load get_item %}
+
+{% if messages %}
+<div class="alert alert-warning" role="alert" id="balert">s
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+   <span aria-hidden="true">&times;</span>
+   </button>
+</div>
+{% endif %}
+<div class="col">
+    <form method="POST" action="{% url 'form_entry_edit' app_id definition.id obj_id %}" id="form" class="form form-content">
+        {% csrf_token %}
+        <input type="hidden" name="parent_form_id" value="" id="id_parent_form_id">
+        <div class="col-md-10">
+            <div id="field"></div>
+             
+            {% comment %} <input type="hidden" name="report_def" value="{{definition.name}}" id="def_name">
+            <input type="hidden" name="generated_by" value="{{request.user.first_name}} {{request.user.last_name}}"> {% endcomment %}
+            <input type="hidden" name="json_data" id="id_json_data"> 
+        </div>
+        <button class="btn btn-secondary" id='form_submit_btn' name='form_submit' type="submit" >{{definition.button_text}}</button>
+    </form>
+
+    <br>
+    <br>
+
+    {% comment %} <h5 class="card-title">{% trans 'Child Page Entries' %}</h5>  {% endcomment %}
+    {% if child_definition %}
+        <div class="col">
+            <ul class="nav nav-tabs">
+                {% for child in child_definition %}
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#{{child.name}}">{{child.title}}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+            <br>    
+            <div class="tab-content">
+                {% for child in child_definition %}
+                <div class="tab-pane" id='{{child.name}}'>
+                    <button class="btn btn-primary" style='float:right;' onclick="load_modal_form('{{child.id}}','{{child.name}}',{{child.schema}})" name='{{child.name}}_btn' type="button" data-toggle="modal" data-target="#FormModal">Add</button>
+                   
+                    <br>
+                    <br>
+                    <div class="table">
+                        <table class="table table-bordered table-hover" style="border-collapse: collapse;table-layout:fixed;" id="example" width="100%" cellspacing="0">
+                            {% if child.name in child_column_list %}
+                                <thead  class="thead-dark">
+                                    <tr>
+                                        {% for item in child_column_list|get_item:child.name %}               
+                                            <th>{{item}}</th>
+                                        {% endfor %}
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                            {% endif %}
+                            <tbody>
+                                {% if child.name in child_value_list  %} 
+                                    {% for item in child_value_list|get_item:child.name %}
+                                    <tr>
+                                        {% for key, value in item.items %}
+                                            {% if key == 'id' or key == 'datetime' %}
+                                                <td>{{value}}</td>
+                                            {% else %}
+                                                <td contenteditable='true'>{{value}}</td>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <td>
+                                            <button class="btn" id='form_data_edit' type='button'><i class="far fa-edit"></i></button>|
+                                            <button class="btn" id='form_data_delete' type='button'><i class="far fa-trash-alt"></i></button>
+                                            {% comment %} <button class="btn" onclick="delete_model_span('{{reg.id}}','{{reg}}')" data-toggle="modal" data-target="#deleteModal" ><i class="far fa-trash-alt"></i></button> {% endcomment %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                <tr><td colspan="{{child_column_list|get_item:child.name|length }}"><center>{% trans 'No Entries available' %}.</center></td></tr> 
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+        </div>
+    {% else %}
+        <div class="col">
+            <div class="table">
+                <table class="table table-bordered table-hover" style="border-collapse: collapse;" width="100%" cellspacing="0">
+                    {% comment %} <tbody><tr><td colspan="5"><center>{% trans 'No Child available' %}.</center></td></tr>  {% endcomment %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+</div>
+<br>
+<br> 
+
+ <!-- Modal -->
+<div class="modal fade bd-example-modal-lg" id="FormModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'form_entry_edit' app_id definition.id obj_id %}" id="form" class="form form-content">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div id="modal_field"></div>
+                        <input type="hidden" name="modal_form_name" value="" id="id_modal_form_name">
+                        <input type="hidden" name="modal_form_id" value="" id="id_modal_form_id"> 
+                        <input type="hidden" name="child_parent_form_id" value="{{obj_id}}" id="id_modal_form_parentid"> 
+                        <input type="hidden" name="child_json_data" id="id_child_json_data"> 
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button class="btn btn-secondary" id='child_form_submit_btn' name='modal_form_submit' type="submit">{{definition.button_text}}</button>
+
+                </div>
+            </form>
+        </div>
+    </div>
+</div> 
+
+<!-- form view handler script -->
+<style>
+    .form-control.je-switcher {
+        display: none;
+    }
+</style>
+<!-- form view handler script -->
+<script>
+    var editor; 
+    $(document).ready( function() {
+        var properties = '{{schema|safe}}';
+        properties=JSON.parse(properties.replace('True','true'));
+        var parent_form_data = JSON.parse('{{parent_form_data|safe}}')
+        var parent_form_id = parent_form_data['id']
+        delete parent_form_data["id"];
+        delete parent_form_data["Datetime"];
+        delete parent_form_data["item_id"];
+        delete parent_form_data["prefix"];
+        load_schema(properties['title'], properties['properties'], properties['required'],'field')
+        setTimeout(function(){
+            editor.setValue(parent_form_data);
+            $('#id_parent_form_id').val(parent_form_id)
+        }, 400);
+    });
+
+    function load_schema(title, properties, required,field) {
+        console.log(properties)
+        var options = {
+            "theme": "bootstrap4",
+            "schema": {
+                "title": title,
+                "type": "object",
+                "id": "schema",     
+                "options": {
+                    "disable_edit_json": true,
+                    "disable_properties": true,
+                    "disable_collapse":true,
+                    "no_additional_properties":true,
+                    "object_layout":"grid"
+                  
+                },
+                
+                "properties": properties, 
+                "required": required
+            }
+        }
+        var element = document.getElementById(field);
+        editor = new JSONEditor(element, options);
+        editor.on('change',() => {
+            const errors = editor.validate();
+            if (errors.length) {
+                $('#form_submit_btn').attr('disabled','disabled');
+            }
+            else {
+                $('#form_submit_btn').removeAttr('disabled');
+            }
+        });
+    }
+    $('#form_submit_btn').on('click', function() {
+        $('#id_json_data').val(JSON.stringify(editor.getValue()))
+    })
+
+    
+    $('#child_form_submit_btn').on('click', function() {
+        $('#id_child_json_data').val(JSON.stringify(editor.getValue()))
+    })
+    window.setTimeout(function() {
+        $(".alert").fadeTo(500, 0).slideUp(500, function(){
+            $(this).remove(); 
+        });
+    }, 5000);
+
+    function hideform(tr_id) {
+        var x = document.getElementById(tr_id);
+        if (x.style.display === 'none') {
+            x.style.display = 'table-row';
+            $("#bt").text("Add").attr('name','child_form');
+            
+        } else {
+            x.style.display = 'none';
+        }
+    }
+
+    function load_modal_form(id,form_name,schema) {
+        var schema = schema
+        $('#modal_field').empty();
+        $('#id_modal_form_name').val(form_name);
+        $('#id_modal_form_id').val(id);
+        var title = schema['title']
+        var properties = schema['properties'] 
+        var required = (("required" in schema) ? schema['required'] : ['birthdate']);
+        load_schema(title, properties, required,'modal_field')
+    }
+</script>
+
+{% endblock content %}
+
+
+
+
+
